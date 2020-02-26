@@ -2,8 +2,8 @@ package com.nordryd.cardgames.gameobjects.deck.impl;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.when;
 
@@ -14,14 +14,10 @@ import com.nordryd.cardgames.gameobjects.Card.Rank;
 import com.nordryd.cardgames.gameobjects.Card.Suit;
 import com.nordryd.cardgames.gameobjects.deck.Deck;
 import com.nordryd.cardgames.gameobjects.deck.exception.DeckException;
-import com.nordryd.cardgames.gameobjects.deck.impl.StandardDeck;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * <p>
@@ -30,25 +26,17 @@ import org.mockito.junit.MockitoJUnitRunner;
  *
  * @author Nordryd
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class StandardDeckTest
 {
     private static final int STD_DECK_SIZE = 52;
 
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
-
     @Mock
     private Random mockRng;
 
-    @Before
-    public void setup() {
-        setRandomIntToGenerate(0);
-    }
-
     @Test
     public void testConstructor() {
-        assertThat(new StandardDeck(mockRng).remainingCards(), is(STD_DECK_SIZE));
+        assertEquals(STD_DECK_SIZE, new StandardDeck(mockRng).remainingCards());
     }
 
     @Test
@@ -56,16 +44,16 @@ public class StandardDeckTest
         final int numToGen = 2;
         setRandomIntToGenerate(numToGen);
         final Deck deck = new StandardDeck(mockRng);
-        assertThat(deck.draw(), is(Card.get(Rank.FOUR).of(Suit.CLUBS)));
-        assertThat(deck.remainingCards(), is(STD_DECK_SIZE - 1));
+        assertEquals(Card.get(Rank.FOUR).of(Suit.CLUBS), deck.draw());
+        assertEquals(STD_DECK_SIZE - 1, deck.remainingCards());
     }
 
     @Test
     public void testDrawSingleUsingArgOverload() {
         setRandomIntToGenerate(2);
         final Deck deck = new StandardDeck(mockRng);
-        assertThat(deck.draw(1), is(singletonList(Card.get(Rank.FOUR).of(Suit.CLUBS))));
-        assertThat(deck.remainingCards(), is(STD_DECK_SIZE - 1));
+        assertEquals(singletonList(Card.get(Rank.FOUR).of(Suit.CLUBS)), deck.draw(1));
+        assertEquals(STD_DECK_SIZE - 1, deck.remainingCards());
     }
 
     @Test
@@ -73,113 +61,110 @@ public class StandardDeckTest
         setRandomIntToGenerate(2);
         final Deck deck = new StandardDeck(mockRng);
         final int wantedCards = 3;
-        assertThat(deck.draw(wantedCards),
-                is(asList(Card.get(Rank.FOUR).of(Suit.CLUBS), Card.get(Rank.FIVE).of(Suit.CLUBS),
-                        Card.get(Rank.SIX).of(Suit.CLUBS))));
-        assertThat(deck.remainingCards(), is(STD_DECK_SIZE - wantedCards));
+        assertEquals(asList(Card.get(Rank.FOUR).of(Suit.CLUBS), Card.get(Rank.FIVE).of(Suit.CLUBS),
+                Card.get(Rank.SIX).of(Suit.CLUBS)), deck.draw(wantedCards));
+        assertEquals(STD_DECK_SIZE - wantedCards, deck.remainingCards());
     }
 
     @Test
     public void testDrawMultipleOverdrawLooparound() {
-        setRandomIntToGenerate(1);
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(true, mockRng);
-        final int wantedCards = 3;
-        final int initialRemaining = 2;
+        final int wantedCards = 5;
+        final int initialRemaining = 4;
         final int expectedNetRemaining = 51;
         deck.draw(STD_DECK_SIZE - initialRemaining);
-        assertThat(deck.remainingCards(), is(initialRemaining));
-        assertThat(deck.draw(wantedCards),
-                is(asList(Card.get(Rank.KING).of(Suit.SPADES), Card.get(Rank.ACE).of(Suit.SPADES),
-                        Card.get(Rank.TWO).of(Suit.CLUBS))));
-        assertThat(deck.remainingCards(), is(expectedNetRemaining));
+        assertEquals(initialRemaining, deck.remainingCards());
+        assertEquals(asList(Card.get(Rank.JACK).of(Suit.SPADES), Card.get(Rank.QUEEN).of(Suit.SPADES),
+                Card.get(Rank.KING).of(Suit.SPADES), Card.get(Rank.ACE).of(Suit.SPADES),
+                Card.get(Rank.TWO).of(Suit.CLUBS)), deck.draw(wantedCards));
+        assertEquals(expectedNetRemaining, deck.remainingCards());
     }
 
     @Test
     public void testDrawMultipleOverdrawNoLooparound() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("5 cards were requested, but only 4 remain. Use reset() to reset the deck.");
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(false, mockRng);
         final int wantedCards = 5;
         final int initialRemaining = 4;
         deck.draw(STD_DECK_SIZE - initialRemaining);
-        assertThat(deck.remainingCards(), is(initialRemaining));
-        deck.draw(wantedCards);
+        assertEquals(initialRemaining, deck.remainingCards());
+        assertEquals("5 cards were requested, but only 4 remain. Use reset() to reset the deck.",
+                assertThrows(DeckException.class, () -> deck.draw(wantedCards)).getMessage());
     }
 
     @Test
     public void testDrawMultipleOverdrawNoLooparound1Left() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("2 cards were requested, but only 1 remains. Use reset() to reset the deck.");
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(false, mockRng);
         final int wantedCards = 2;
         final int initialRemaining = 1;
-        deck.draw(STD_DECK_SIZE - 1);
-        assertThat(deck.remainingCards(), is(initialRemaining));
-        deck.draw(wantedCards);
+        deck.draw(STD_DECK_SIZE - initialRemaining);
+        assertEquals(initialRemaining, deck.remainingCards());
+        assertEquals("2 cards were requested, but only 1 remains. Use reset() to reset the deck.",
+                assertThrows(DeckException.class, () -> deck.draw(wantedCards)).getMessage());
     }
 
     @Test
     public void testDrawMultipleOver52Looparound() {
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(true, mockRng);
         final int wantedCards = 53;
         final int expectedNetRemaining = 51;
-        assertThat(deck.draw(wantedCards).size(), is(wantedCards));
-        assertThat(deck.remainingCards(), is(expectedNetRemaining));
+        assertEquals(wantedCards, deck.draw(wantedCards).size());
+        assertEquals(expectedNetRemaining, deck.remainingCards());
     }
 
     @Test
     public void testDrawMultipleOver52NoLooparound() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("53 cards were requested when there can be no more than 52.");
-        new StandardDeck(false, mockRng).draw(53);
+        assertEquals("53 cards were requested when there can be no more than 52.",
+                assertThrows(DeckException.class, () -> new StandardDeck(false, mockRng).draw(53)).getMessage());
     }
 
     @Test
     public void testDrawMultipleExactly52Looparound() {
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(true, mockRng);
-        assertThat(deck.draw(STD_DECK_SIZE).size(), is(STD_DECK_SIZE));
-        assertThat(deck.remainingCards(), is(0));
+        assertEquals(STD_DECK_SIZE, deck.draw(STD_DECK_SIZE).size());
+        assertEquals(0, deck.remainingCards());
     }
 
     @Test
     public void testDrawMultipleExactly52NoLooparound() {
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(true, mockRng);
-        assertThat(deck.draw(STD_DECK_SIZE).size(), is(STD_DECK_SIZE));
-        assertThat(deck.remainingCards(), is(0));
+        assertEquals(STD_DECK_SIZE, deck.draw(STD_DECK_SIZE).size());
+        assertEquals(0, deck.remainingCards());
     }
 
     @Test
     public void testDrawDeckIsEmpty() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("There are no more cards to draw! Use reset() to reset the deck.");
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(false, mockRng);
         deck.draw(STD_DECK_SIZE);
-        deck.draw();
+        assertEquals("There are no more cards to draw! Use reset() to reset the deck.",
+                assertThrows(DeckException.class, deck::draw).getMessage());
     }
 
     @Test
     public void testDrawMultipleDeckIsEmpty() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("There are no more cards to draw! Use reset() to reset the deck.");
+        setRandomIntToGenerate(0);
         final Deck deck = new StandardDeck(false, mockRng);
         deck.draw(STD_DECK_SIZE);
-        deck.draw(2);
+        assertEquals("There are no more cards to draw! Use reset() to reset the deck.",
+                assertThrows(DeckException.class, () -> deck.draw(2)).getMessage());
     }
 
     @Test
     public void testDrawMultipleZero() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("Cannot draw 0 cards.");
-        final Deck deck = new StandardDeck(mockRng);
-        deck.draw(0);
+        assertEquals("Cannot draw 0 cards.",
+                assertThrows(DeckException.class, () -> new StandardDeck(mockRng).draw(0)).getMessage());
     }
 
     @Test
     public void testDrawMultipleNegative() {
-        thrown.expect(DeckException.class);
-        thrown.expectMessage("Cannot draw a negative number of cards.");
-        final Deck deck = new StandardDeck(mockRng);
-        deck.draw(-1);
+        assertEquals("Cannot draw a negative number of cards.",
+                assertThrows(DeckException.class, () -> new StandardDeck(mockRng).draw(-1)).getMessage());
     }
 
     private void setRandomIntToGenerate(final int numberToGen) {
