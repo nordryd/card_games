@@ -5,7 +5,7 @@ import static java.util.Objects.hash;
 
 /**
  * <p>
- * Represents a single playing card from a standard 52 card deck.
+ * Represents a single playing card from a standard 52-card deck.
  * </p>
  *
  * @author Nordryd
@@ -39,7 +39,7 @@ public class Card
      *
      * @param opponent the opposing {@link Card} to battle.
      * @param isAceHigh {@code true} if aces are <i>HIGH</i> for this battle.
-     * @return the {@link BattleResult resolution} of the battle (win, lose, or tie).
+     * @return how the battle resolved {@link BattleResult (win, lose, or tie)}.
      */
     public BattleResult battle(final Card opponent, final boolean isAceHigh) {
         if (this.equals(opponent)) {
@@ -47,7 +47,7 @@ public class Card
         }
 
         final boolean ranksEqual = rank.equals(opponent.rank);
-        if (ranksEqual && (!suit.equals(opponent.suit) && suit.beats(opponent.suit))) {
+        if (ranksEqual && !suit.equals(opponent.suit) && suit.beats(opponent.suit)) {
             return BattleResult.WIN;
         }
 
@@ -56,7 +56,7 @@ public class Card
             return BattleResult.LOSE;
         }
 
-        return (suit.equals(opponent.suit) && rankWins) ?
+        return (rankWins && suit.equals(opponent.suit)) ?
                 BattleResult.WIN :
                 rankWins ? BattleResult.WIN : BattleResult.LOSE;
     }
@@ -65,7 +65,7 @@ public class Card
      * Pits the current {@link Card} against another in glorious combat. <b>Aces will be treated as <i>HIGH</i></b>.
      *
      * @param opponent the opposing {@link Card} to battle.
-     * @return the {@link BattleResult result of the battle} (win, lose, or tie).
+     * @return how the battle resolved {@link BattleResult (win, lose, or tie)}.
      */
     public BattleResult battle(final Card opponent) {
         return battle(opponent, true);
