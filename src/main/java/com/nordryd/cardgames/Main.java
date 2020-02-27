@@ -14,12 +14,15 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 @SpringBootApplication
 public class Main
 {
+    public static final String CORE_ENDPOINT = "/api/cardgames/";
+
     /**
      * Main method.
      *
      * @param args command line arguments.
      */
     public static void main(final String... args) {
+        final ApplicationContext config = new AnnotationConfigApplicationContext(AppConfig.class);
         run(Main.class, args);
     }
 }
